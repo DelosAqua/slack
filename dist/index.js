@@ -5,7 +5,7 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"_args":[["@slack/webhook@6.0.0","/Users/nsatterl/Projects/act10ns-slack"]],"_from":"@slack/webhook@6.0.0","_id":"@slack/webhook@6.0.0","_inBundle":false,"_integrity":"sha512-2fohfhLI9lkAmOSWt1R457JBsB3iFNqahu4GqdFZRtcp/bT+xeG/kPn/hQa78JS74poRjWTt5G/qJjNaWMGOEQ==","_location":"/@slack/webhook","_phantomChildren":{"follow-redirects":"1.14.5"},"_requested":{"type":"version","registry":true,"raw":"@slack/webhook@6.0.0","name":"@slack/webhook","escapedName":"@slack%2fwebhook","scope":"@slack","rawSpec":"6.0.0","saveSpec":null,"fetchSpec":"6.0.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/@slack/webhook/-/webhook-6.0.0.tgz","_spec":"6.0.0","_where":"/Users/nsatterl/Projects/act10ns-slack","author":{"name":"Slack Technologies, Inc."},"bugs":{"url":"https://github.com/slackapi/node-slack-sdk/issues"},"dependencies":{"@slack/types":"^1.2.1","@types/node":">=12.0.0","axios":"^0.21.1"},"description":"Official library for using the Slack Platform\'s Incoming Webhooks","devDependencies":{"@microsoft/api-extractor":"^7.3.4","@types/chai":"^4.1.7","@types/mocha":"^5.2.6","chai":"^4.2.0","codecov":"^3.2.0","mocha":"^6.0.2","nock":"^10.0.6","nyc":"^14.1.1","shx":"^0.3.2","sinon":"^7.2.7","source-map-support":"^0.5.10","ts-node":"^8.0.3","tslint":"^5.13.1","tslint-config-airbnb":"^5.11.1","typescript":"^4.1.0"},"engines":{"node":">= 12.13.0","npm":">= 6.12.0"},"files":["dist/**/*"],"homepage":"https://slack.dev/node-slack-sdk/webhook","keywords":["slack","request","client","http","api","proxy"],"license":"MIT","main":"dist/index.js","name":"@slack/webhook","publishConfig":{"access":"public"},"repository":{"type":"git","url":"git+https://github.com/slackapi/node-slack-sdk.git"},"scripts":{"build":"npm run build:clean && tsc","build:clean":"shx rm -rf ./dist ./coverage ./.nyc_output","coverage":"codecov -F webhook --root=$PWD","lint":"tslint --project .","prepare":"npm run build","ref-docs:model":"api-extractor run","test":"npm run build && nyc mocha --config .mocharc.json src/*.spec.js"},"types":"./dist/index.d.ts","version":"6.0.0"}');
+module.exports = JSON.parse('{"_args":[["@slack/webhook@6.0.0","/home/bambang/personal/project/slack"]],"_from":"@slack/webhook@6.0.0","_id":"@slack/webhook@6.0.0","_inBundle":false,"_integrity":"sha512-2fohfhLI9lkAmOSWt1R457JBsB3iFNqahu4GqdFZRtcp/bT+xeG/kPn/hQa78JS74poRjWTt5G/qJjNaWMGOEQ==","_location":"/@slack/webhook","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"@slack/webhook@6.0.0","name":"@slack/webhook","escapedName":"@slack%2fwebhook","scope":"@slack","rawSpec":"6.0.0","saveSpec":null,"fetchSpec":"6.0.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/@slack/webhook/-/webhook-6.0.0.tgz","_spec":"6.0.0","_where":"/home/bambang/personal/project/slack","author":{"name":"Slack Technologies, Inc."},"bugs":{"url":"https://github.com/slackapi/node-slack-sdk/issues"},"dependencies":{"@slack/types":"^1.2.1","@types/node":">=12.0.0","axios":"^0.21.1"},"description":"Official library for using the Slack Platform\'s Incoming Webhooks","devDependencies":{"@microsoft/api-extractor":"^7.3.4","@types/chai":"^4.1.7","@types/mocha":"^5.2.6","chai":"^4.2.0","codecov":"^3.2.0","mocha":"^6.0.2","nock":"^10.0.6","nyc":"^14.1.1","shx":"^0.3.2","sinon":"^7.2.7","source-map-support":"^0.5.10","ts-node":"^8.0.3","tslint":"^5.13.1","tslint-config-airbnb":"^5.11.1","typescript":"^4.1.0"},"engines":{"node":">= 12.13.0","npm":">= 6.12.0"},"files":["dist/**/*"],"homepage":"https://slack.dev/node-slack-sdk/webhook","keywords":["slack","request","client","http","api","proxy"],"license":"MIT","main":"dist/index.js","name":"@slack/webhook","publishConfig":{"access":"public"},"repository":{"type":"git","url":"git+https://github.com/slackapi/node-slack-sdk.git"},"scripts":{"build":"npm run build:clean && tsc","build:clean":"shx rm -rf ./dist ./coverage ./.nyc_output","coverage":"codecov -F webhook --root=$PWD","lint":"tslint --project .","prepare":"npm run build","ref-docs:model":"api-extractor run","test":"npm run build && nyc mocha --config .mocharc.json src/*.spec.js"},"types":"./dist/index.d.ts","version":"6.0.0"}');
 
 /***/ }),
 
@@ -216,6 +216,19 @@ function stepIcon(status, opts) {
         return (opts === null || opts === void 0 ? void 0 : opts.skipped) || ':no_entry_sign:';
     return `:grey_question: ${status}`;
 }
+function stepMention(mentionType, mentionName, opts) {
+    var _a, _b;
+    let mentionCode;
+    if (mentionType.toLowerCase() === 'user') {
+        mentionCode = ((_a = opts === null || opts === void 0 ? void 0 : opts.user) === null || _a === void 0 ? void 0 : _a[mentionName]) || "";
+        return (mentionCode === "") ? mentionName : `<@${mentionCode}>`;
+    }
+    if (mentionType.toLowerCase() === 'group') {
+        mentionCode = ((_b = opts === null || opts === void 0 ? void 0 : opts.group) === null || _b === void 0 ? void 0 : _b[mentionName]) || "";
+        return (mentionCode === "") ? mentionName : `<!subteam^${mentionCode}>`;
+    }
+    return mentionName;
+}
 function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
@@ -225,7 +238,7 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
         const repositoryUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`;
         const runId = process.env.GITHUB_RUN_ID;
         const runNumber = process.env.GITHUB_RUN_NUMBER;
-        const workflowUrl = `${repositoryUrl}/actions?query=${workflow}`;
+        const workflowUrl = `${repositoryUrl}/actions/workflows/${workflow}.yml`;
         const workflowRunUrl = `${repositoryUrl}/actions/runs/${runId}`;
         const sha = process.env.GITHUB_SHA;
         const shortSha = sha.slice(0, 8);
@@ -303,6 +316,7 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
             }
         }
         handlebars_1.default.registerHelper('icon', status => stepIcon(status, opts === null || opts === void 0 ? void 0 : opts.icons));
+        handlebars_1.default.registerHelper('mention', (mentionType, mentionName) => stepMention(mentionType, mentionName, opts === null || opts === void 0 ? void 0 : opts.mention));
         const pretextTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.pretext) || '');
         const titleTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.title) || '');
         const defaultText = `${'*<{{{workflowUrl}}}|Workflow _{{workflow}}_ ' +
@@ -367,6 +381,8 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
         const title = titleTemplate(data);
         const text = textTemplate(data);
         const fallback = fallbackTemplate(data);
+        const fieldsJson = fieldsTemplate(data);
+        core.debug(fieldsJson.toString());
         const fields = JSON.parse(fieldsTemplate(data));
         const footer = footerTemplate(data);
         const filteredBlocks = [];
@@ -389,6 +405,8 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
             footer,
             footer_icon: DEFAULT_FOOTER_ICON
         };
+        const blocksJson = blocksTemplate(Object.assign(Object.assign({}, data), blockContext));
+        core.debug(blocksJson.toString());
         const blocks = JSON.parse(blocksTemplate(Object.assign(Object.assign({}, data), blockContext)));
         const attachments = [
             {
@@ -23306,7 +23324,7 @@ module.exports = eval("require")("encoding");
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"_args":[["axios@0.21.4","/Users/nsatterl/Projects/act10ns-slack"]],"_from":"axios@0.21.4","_id":"axios@0.21.4","_inBundle":false,"_integrity":"sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==","_location":"/axios","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"axios@0.21.4","name":"axios","escapedName":"axios","rawSpec":"0.21.4","saveSpec":null,"fetchSpec":"0.21.4"},"_requiredBy":["/@slack/webhook"],"_resolved":"https://registry.npmjs.org/axios/-/axios-0.21.4.tgz","_spec":"0.21.4","_where":"/Users/nsatterl/Projects/act10ns-slack","author":{"name":"Matt Zabriskie"},"browser":{"./lib/adapters/http.js":"./lib/adapters/xhr.js"},"bugs":{"url":"https://github.com/axios/axios/issues"},"bundlesize":[{"path":"./dist/axios.min.js","threshold":"5kB"}],"dependencies":{"follow-redirects":"^1.14.0"},"description":"Promise based HTTP client for the browser and node.js","devDependencies":{"coveralls":"^3.0.0","es6-promise":"^4.2.4","grunt":"^1.3.0","grunt-banner":"^0.6.0","grunt-cli":"^1.2.0","grunt-contrib-clean":"^1.1.0","grunt-contrib-watch":"^1.0.0","grunt-eslint":"^23.0.0","grunt-karma":"^4.0.0","grunt-mocha-test":"^0.13.3","grunt-ts":"^6.0.0-beta.19","grunt-webpack":"^4.0.2","istanbul-instrumenter-loader":"^1.0.0","jasmine-core":"^2.4.1","karma":"^6.3.2","karma-chrome-launcher":"^3.1.0","karma-firefox-launcher":"^2.1.0","karma-jasmine":"^1.1.1","karma-jasmine-ajax":"^0.1.13","karma-safari-launcher":"^1.0.0","karma-sauce-launcher":"^4.3.6","karma-sinon":"^1.0.5","karma-sourcemap-loader":"^0.3.8","karma-webpack":"^4.0.2","load-grunt-tasks":"^3.5.2","minimist":"^1.2.0","mocha":"^8.2.1","sinon":"^4.5.0","terser-webpack-plugin":"^4.2.3","typescript":"^4.0.5","url-search-params":"^0.10.0","webpack":"^4.44.2","webpack-dev-server":"^3.11.0"},"homepage":"https://axios-http.com","jsdelivr":"dist/axios.min.js","keywords":["xhr","http","ajax","promise","node"],"license":"MIT","main":"index.js","name":"axios","repository":{"type":"git","url":"git+https://github.com/axios/axios.git"},"scripts":{"build":"NODE_ENV=production grunt build","coveralls":"cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js","examples":"node ./examples/server.js","fix":"eslint --fix lib/**/*.js","postversion":"git push && git push --tags","preversion":"npm test","start":"node ./sandbox/server.js","test":"grunt test","version":"npm run build && grunt version && git add -A dist && git add CHANGELOG.md bower.json package.json"},"typings":"./index.d.ts","unpkg":"dist/axios.min.js","version":"0.21.4"}');
+module.exports = JSON.parse('{"_args":[["axios@0.21.4","/home/bambang/personal/project/slack"]],"_from":"axios@0.21.4","_id":"axios@0.21.4","_inBundle":false,"_integrity":"sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==","_location":"/axios","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"axios@0.21.4","name":"axios","escapedName":"axios","rawSpec":"0.21.4","saveSpec":null,"fetchSpec":"0.21.4"},"_requiredBy":["/@slack/webhook"],"_resolved":"https://registry.npmjs.org/axios/-/axios-0.21.4.tgz","_spec":"0.21.4","_where":"/home/bambang/personal/project/slack","author":{"name":"Matt Zabriskie"},"browser":{"./lib/adapters/http.js":"./lib/adapters/xhr.js"},"bugs":{"url":"https://github.com/axios/axios/issues"},"bundlesize":[{"path":"./dist/axios.min.js","threshold":"5kB"}],"dependencies":{"follow-redirects":"^1.14.0"},"description":"Promise based HTTP client for the browser and node.js","devDependencies":{"coveralls":"^3.0.0","es6-promise":"^4.2.4","grunt":"^1.3.0","grunt-banner":"^0.6.0","grunt-cli":"^1.2.0","grunt-contrib-clean":"^1.1.0","grunt-contrib-watch":"^1.0.0","grunt-eslint":"^23.0.0","grunt-karma":"^4.0.0","grunt-mocha-test":"^0.13.3","grunt-ts":"^6.0.0-beta.19","grunt-webpack":"^4.0.2","istanbul-instrumenter-loader":"^1.0.0","jasmine-core":"^2.4.1","karma":"^6.3.2","karma-chrome-launcher":"^3.1.0","karma-firefox-launcher":"^2.1.0","karma-jasmine":"^1.1.1","karma-jasmine-ajax":"^0.1.13","karma-safari-launcher":"^1.0.0","karma-sauce-launcher":"^4.3.6","karma-sinon":"^1.0.5","karma-sourcemap-loader":"^0.3.8","karma-webpack":"^4.0.2","load-grunt-tasks":"^3.5.2","minimist":"^1.2.0","mocha":"^8.2.1","sinon":"^4.5.0","terser-webpack-plugin":"^4.2.3","typescript":"^4.0.5","url-search-params":"^0.10.0","webpack":"^4.44.2","webpack-dev-server":"^3.11.0"},"homepage":"https://axios-http.com","jsdelivr":"dist/axios.min.js","keywords":["xhr","http","ajax","promise","node"],"license":"MIT","main":"index.js","name":"axios","repository":{"type":"git","url":"git+https://github.com/axios/axios.git"},"scripts":{"build":"NODE_ENV=production grunt build","coveralls":"cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js","examples":"node ./examples/server.js","fix":"eslint --fix lib/**/*.js","postversion":"git push && git push --tags","preversion":"npm test","start":"node ./sandbox/server.js","test":"grunt test","version":"npm run build && grunt version && git add -A dist && git add CHANGELOG.md bower.json package.json"},"typings":"./index.d.ts","unpkg":"dist/axios.min.js","version":"0.21.4"}');
 
 /***/ }),
 
