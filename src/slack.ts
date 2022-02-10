@@ -284,12 +284,12 @@ export async function send(
 
   let mentionGroup = {}
   for (const [k, v] of Object.entries(opts?.mention?.group || {})) {
-    mentionGroup = {...mentionGroup, ...{[k]: `<!subteam^${v}>`}}
+    mentionGroup = {...mentionGroup, ...{[k]: `!subteam^${v}`}}
   }
 
   let mentionUser = {}
   for (const [k, v] of Object.entries(opts?.mention?.user || {})) {
-    mentionUser = {...mentionUser, ...{[k]: `<@${v}>`}}
+    mentionUser = {...mentionUser, ...{[k]: `@${v}`}}
   }
 
   const mention = {group: mentionGroup, user: mentionUser}

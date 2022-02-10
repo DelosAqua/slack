@@ -337,11 +337,11 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
         const footerTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.footer) || defaultFooter);
         let mentionGroup = {};
         for (const [k, v] of Object.entries(((_c = opts === null || opts === void 0 ? void 0 : opts.mention) === null || _c === void 0 ? void 0 : _c.group) || {})) {
-            mentionGroup = Object.assign(Object.assign({}, mentionGroup), { [k]: `<!subteam^${v}>` });
+            mentionGroup = Object.assign(Object.assign({}, mentionGroup), { [k]: `!subteam^${v}` });
         }
         let mentionUser = {};
         for (const [k, v] of Object.entries(((_d = opts === null || opts === void 0 ? void 0 : opts.mention) === null || _d === void 0 ? void 0 : _d.user) || {})) {
-            mentionUser = Object.assign(Object.assign({}, mentionUser), { [k]: `<@${v}>` });
+            mentionUser = Object.assign(Object.assign({}, mentionUser), { [k]: `@${v}` });
         }
         const mention = { group: mentionGroup, user: mentionUser };
         const data = {
