@@ -244,7 +244,7 @@ export async function send(
   const titleTemplate = Handlebars.compile(opts?.title || '')
 
   const defaultText = `${
-    '*<{{{workflowUrl}}}|Workflow _{{workflow}}_ ' +
+    '*<{{{workflowRunUrl}}}|Workflow _{{workflow}}_ ' +
     'job _{{jobName}}_ triggered by _{{eventName}}_ is _{{jobStatus}}_>* ' +
     'for <{{refUrl}}|`{{ref}}`>\n'
   }${description ? '<{{diffUrl}}|`{{diffRef}}`> - {{{description}}}' : ''}`
