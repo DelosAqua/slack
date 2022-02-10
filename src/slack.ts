@@ -52,18 +52,6 @@ interface MentionGroup {
   [key: string]: string
 }
 
-function stepMention(mentionType: string, mentionName: string, opts?: MentionOption): string {
-  let mentionCode
-  if (mentionType.toLowerCase() === 'user') {
-    mentionCode = opts?.user?.[mentionName] || ""
-    return (mentionCode === "")? mentionName : `<@${mentionCode}>`
-  }
-  if (mentionType.toLowerCase() === 'group') {
-    mentionCode = opts?.group?.[mentionName] || ""
-    return (mentionCode === "")? mentionName : `<!subteam^${mentionCode}>`
-  }
-  return mentionName
-}
 interface Field {
   title: string
   value: string
@@ -150,7 +138,7 @@ export interface ConfigOptions {
   icons?: object
   unfurl_links?: boolean
   unfurl_media?: boolean
-  mention?: object
+  mention?: MentionOption
 }
 
 export async function send(
@@ -251,8 +239,7 @@ export async function send(
   }
 
   Handlebars.registerHelper('icon', status => stepIcon(status, opts?.icons))
-  Handlebars.registerHelper('mention', (mentionType, mentionName) => stepMention(mentionType, mentionName, opts?.mention))
-
+  
   const pretextTemplate = Handlebars.compile(opts?.pretext || '')
   const titleTemplate = Handlebars.compile(opts?.title || '')
 
@@ -295,6 +282,18 @@ export async function send(
   const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}> #{{runNumber}}'
   const footerTemplate = Handlebars.compile(opts?.footer || defaultFooter)
 
+  let mentionGroup = {}
+  for (const [k, v] of Object.entries(opts?.mention?.group || {})) {
+    mentionGroup = {...mentionGroup, ...{[k]: `<!subteam^${v}>`}}
+  }
+
+  let mentionUser = {}
+  for (const [k, v] of Object.entries(opts?.mention?.user || {})) {
+    mentionUser = {...mentionUser, ...{[k]: `<@${v}>`}}
+  }
+
+  const mention = {group: mentionGroup, user: mentionUser}
+
   const data = {
     env: process.env,
     payload: payload || {},
@@ -321,7 +320,8 @@ export async function send(
     diffUrl,
     description,
     sender,
-    ts
+    ts,
+    mention
   }
 
   const pretext = pretextTemplate(data)

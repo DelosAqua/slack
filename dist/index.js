@@ -216,21 +216,8 @@ function stepIcon(status, opts) {
         return (opts === null || opts === void 0 ? void 0 : opts.skipped) || ':no_entry_sign:';
     return `:grey_question: ${status}`;
 }
-function stepMention(mentionType, mentionName, opts) {
-    var _a, _b;
-    let mentionCode;
-    if (mentionType.toLowerCase() === 'user') {
-        mentionCode = ((_a = opts === null || opts === void 0 ? void 0 : opts.user) === null || _a === void 0 ? void 0 : _a[mentionName]) || "";
-        return (mentionCode === "") ? mentionName : `<@${mentionCode}>`;
-    }
-    if (mentionType.toLowerCase() === 'group') {
-        mentionCode = ((_b = opts === null || opts === void 0 ? void 0 : opts.group) === null || _b === void 0 ? void 0 : _b[mentionName]) || "";
-        return (mentionCode === "") ? mentionName : `<!subteam^${mentionCode}>`;
-    }
-    return mentionName;
-}
 function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
-    var _a, _b;
+    var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
         const eventName = process.env.GITHUB_EVENT_NAME;
         const workflow = process.env.GITHUB_WORKFLOW;
@@ -316,7 +303,6 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
             }
         }
         handlebars_1.default.registerHelper('icon', status => stepIcon(status, opts === null || opts === void 0 ? void 0 : opts.icons));
-        handlebars_1.default.registerHelper('mention', (mentionType, mentionName) => stepMention(mentionType, mentionName, opts === null || opts === void 0 ? void 0 : opts.mention));
         const pretextTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.pretext) || '');
         const titleTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.title) || '');
         const defaultText = `${'*<{{{workflowUrl}}}|Workflow _{{workflow}}_ ' +
@@ -349,6 +335,15 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
         const fieldsTemplate = handlebars_1.default.compile(JSON.stringify(filteredFields));
         const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}> #{{runNumber}}';
         const footerTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.footer) || defaultFooter);
+        let mentionGroup = {};
+        for (const [k, v] of Object.entries(((_c = opts === null || opts === void 0 ? void 0 : opts.mention) === null || _c === void 0 ? void 0 : _c.group) || {})) {
+            mentionGroup = Object.assign(Object.assign({}, mentionGroup), { [k]: `<!subteam^${v}>` });
+        }
+        let mentionUser = {};
+        for (const [k, v] of Object.entries(((_d = opts === null || opts === void 0 ? void 0 : opts.mention) === null || _d === void 0 ? void 0 : _d.user) || {})) {
+            mentionUser = Object.assign(Object.assign({}, mentionUser), { [k]: `<@${v}>` });
+        }
+        const mention = { group: mentionGroup, user: mentionUser };
         const data = {
             env: process.env,
             payload: payload || {},
@@ -375,7 +370,8 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
             diffUrl,
             description,
             sender,
-            ts
+            ts,
+            mention
         };
         const pretext = pretextTemplate(data);
         const title = titleTemplate(data);
