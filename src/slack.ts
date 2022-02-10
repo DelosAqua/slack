@@ -39,6 +39,31 @@ function stepIcon(status: string, opts?: IconOptions): string {
   return `:grey_question: ${status}`
 }
 
+interface MentionOption {
+  user?: MentionUser
+  group?: MentionGroup
+}
+
+interface MentionUser {
+  [key: string]: string
+}
+
+interface MentionGroup {
+  [key: string]: string
+}
+
+function stepMention(mentionType: string, mentionName: string, opts?: MentionOption): string {
+  let mentionCode
+  if (mentionType.toLowerCase() === 'user') {
+    mentionCode = opts?.user?.[mentionName] || ""
+    return (mentionCode === "")? mentionName : `<@${mentionCode}>`
+  }
+  if (mentionType.toLowerCase() === 'group') {
+    mentionCode = opts?.group?.[mentionName] || ""
+    return (mentionCode === "")? mentionName : `<!subteam^${mentionCode}>`
+  }
+  return mentionName
+}
 interface Field {
   title: string
   value: string
@@ -125,6 +150,7 @@ export interface ConfigOptions {
   icons?: object
   unfurl_links?: boolean
   unfurl_media?: boolean
+  mention?: object
 }
 
 export async function send(
@@ -143,7 +169,7 @@ export async function send(
 
   const runId = process.env.GITHUB_RUN_ID
   const runNumber = process.env.GITHUB_RUN_NUMBER
-  const workflowUrl = `${repositoryUrl}/actions?query=${workflow}`
+  const workflowUrl = `${repositoryUrl}/actions/workflows/${workflow}.yml`
   const workflowRunUrl = `${repositoryUrl}/actions/runs/${runId}`
 
   const sha = process.env.GITHUB_SHA as string
@@ -225,6 +251,7 @@ export async function send(
   }
 
   Handlebars.registerHelper('icon', status => stepIcon(status, opts?.icons))
+  Handlebars.registerHelper('mention', (mentionType, mentionName) => stepMention(mentionType, mentionName, opts?.mention))
 
   const pretextTemplate = Handlebars.compile(opts?.pretext || '')
   const titleTemplate = Handlebars.compile(opts?.title || '')
