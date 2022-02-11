@@ -366,7 +366,7 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackIn
             }
         }
         const fieldsTemplate = handlebars_1.default.compile(JSON.stringify(filteredFields));
-        const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}> #{{runNumber}}';
+        const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}>';
         const footerTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.footer) || defaultFooter);
         const data = {
             env: process.env,
