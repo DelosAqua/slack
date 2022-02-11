@@ -39,31 +39,24 @@ function stepIcon(status: string, opts?: IconOptions): string {
   return `:grey_question: ${status}`
 }
 
-interface MentionOption {
-  user?: MentionUser
-  group?: MentionGroup
+export interface SlackInfoOptions {
+  user?: SlackUser
+  group?: SlackGroup
+  github?: SlackGithub
 }
 
-interface MentionUser {
+interface SlackUser {
   [key: string]: string
 }
 
-interface MentionGroup {
+interface SlackGroup {
   [key: string]: string
 }
 
-function stepMention(mentionType: string, mentionName: string, opts?: MentionOption): string {
-  let mentionCode
-  if (mentionType.toLowerCase() === 'user') {
-    mentionCode = opts?.user?.[mentionName] || ""
-    return (mentionCode === "")? mentionName : `<@${mentionCode}>`
-  }
-  if (mentionType.toLowerCase() === 'group') {
-    mentionCode = opts?.group?.[mentionName] || ""
-    return (mentionCode === "")? mentionName : `<!subteam^${mentionCode}>`
-  }
-  return mentionName
+interface SlackGithub {
+  [key: string]: string
 }
+
 interface Field {
   title: string
   value: string
@@ -135,6 +128,10 @@ interface Section {
   if?: string
 }
 
+interface FilterOptions {
+  steps?: string[]
+}
+
 export interface ConfigOptions {
   username?: string
   icon_url?: string
@@ -150,7 +147,7 @@ export interface ConfigOptions {
   icons?: object
   unfurl_links?: boolean
   unfurl_media?: boolean
-  mention?: object
+  filter?: FilterOptions
 }
 
 export async function send(
@@ -160,7 +157,8 @@ export async function send(
   jobSteps: object,
   channel?: string,
   message?: string,
-  opts?: ConfigOptions
+  opts?: ConfigOptions,
+  slackInfo?: SlackInfoOptions
 ): Promise<IncomingWebhookResult> {
   const eventName = process.env.GITHUB_EVENT_NAME
   const workflow = process.env.GITHUB_WORKFLOW
@@ -251,13 +249,12 @@ export async function send(
   }
 
   Handlebars.registerHelper('icon', status => stepIcon(status, opts?.icons))
-  Handlebars.registerHelper('mention', (mentionType, mentionName) => stepMention(mentionType, mentionName, opts?.mention))
-
+  
   const pretextTemplate = Handlebars.compile(opts?.pretext || '')
   const titleTemplate = Handlebars.compile(opts?.title || '')
 
   const defaultText = `${
-    '*<{{{workflowUrl}}}|Workflow _{{workflow}}_ ' +
+    '*<{{{workflowRunUrl}}}|Workflow _{{workflow}}_ ' +
     'job _{{jobName}}_ triggered by _{{eventName}}_ is _{{jobStatus}}_>* ' +
     'for <{{refUrl}}|`{{ref}}`>\n'
   }${description ? '<{{diffUrl}}|`{{diffRef}}`> - {{{description}}}' : ''}`
@@ -292,8 +289,32 @@ export async function send(
   }
   const fieldsTemplate = Handlebars.compile(JSON.stringify(filteredFields))
 
-  const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}> #{{runNumber}}'
+  const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}>'
   const footerTemplate = Handlebars.compile(opts?.footer || defaultFooter)
+
+  let mentionUser = {}
+  for (const [k, v] of Object.entries(slackInfo?.user || {})) {
+    mentionUser = {...mentionUser, ...{[k]: `@${v}`}}
+  }
+
+  let mentionGroup = {}
+  for (const [k, v] of Object.entries(slackInfo?.group || {})) {
+    mentionGroup = {...mentionGroup, ...{[k]: `!subteam^${v}`}}
+  }
+
+  let mentionGithub = {}
+  for (const [k, v] of Object.entries(slackInfo?.github || {})) {
+    mentionGithub = {...mentionGithub, ...{[k]: `@${v}`}}
+  }
+
+  const actorSlack = actor || ""
+  const actorSlackId = slackInfo?.github?.[actorSlack]
+  let mentionActor = `@${actorSlack}`
+  if (actorSlackId) {
+    mentionActor = `@${actorSlackId}`
+  }
+
+  const mention = {user: mentionUser, group: mentionGroup, github: mentionGithub, actor: mentionActor}
 
   const data = {
     env: process.env,
@@ -321,7 +342,8 @@ export async function send(
     diffUrl,
     description,
     sender,
-    ts
+    ts,
+    mention
   }
 
   const pretext = pretextTemplate(data)

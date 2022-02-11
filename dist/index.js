@@ -91,6 +91,7 @@ const yaml = __importStar(__nccwpck_require__(1917));
 const slack_1 = __nccwpck_require__(568);
 const fs_1 = __nccwpck_require__(5747);
 function run() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // debug output of environment variables and event payload
@@ -113,16 +114,35 @@ function run() {
                     core.info(error.message);
             }
             core.debug(yaml.dump(config));
+            const slackInfoFile = core.getInput('slack_info', { required: false });
+            let slackInfo = {};
+            try {
+                core.info(`Reading slack config file ${slackInfoFile}...`);
+                if ((0, fs_1.existsSync)(slackInfoFile)) {
+                    slackInfo = yaml.load((0, fs_1.readFileSync)(slackInfoFile, 'utf-8'), { schema: yaml.FAILSAFE_SCHEMA });
+                }
+            }
+            catch (error) {
+                if (error instanceof Error)
+                    core.info(error.message);
+            }
+            core.debug(yaml.dump(slackInfo));
             const url = process.env.SLACK_WEBHOOK_URL;
             const jobName = process.env.GITHUB_JOB;
             const jobStatus = core.getInput('status', { required: true }).toUpperCase();
             const jobSteps = JSON.parse(core.getInput('steps', { required: false }) || '{}');
+            const allowedSteps = ((_a = config === null || config === void 0 ? void 0 : config.filter) === null || _a === void 0 ? void 0 : _a.steps) || [];
+            const filteredSteps = Object.keys(allowedSteps).length ?
+                Object.keys(jobSteps).filter(k => allowedSteps.includes(k)).reduce((obj, k) => {
+                    obj = Object.assign(Object.assign({}, obj), { [k]: jobSteps[k] });
+                    return obj;
+                }, {}) : jobSteps;
             const channel = core.getInput('channel', { required: false });
             const message = core.getInput('message', { required: false });
             core.debug(`jobName: ${jobName}, jobStatus: ${jobStatus}`);
             core.debug(`channel: ${channel}, message: ${message}`);
             if (url) {
-                yield (0, slack_1.send)(url, jobName, jobStatus, jobSteps, channel, message, config);
+                yield (0, slack_1.send)(url, jobName, jobStatus, filteredSteps, channel, message, config, slackInfo);
                 core.debug('Sent to Slack.');
             }
             else {
@@ -216,21 +236,8 @@ function stepIcon(status, opts) {
         return (opts === null || opts === void 0 ? void 0 : opts.skipped) || ':no_entry_sign:';
     return `:grey_question: ${status}`;
 }
-function stepMention(mentionType, mentionName, opts) {
-    var _a, _b;
-    let mentionCode;
-    if (mentionType.toLowerCase() === 'user') {
-        mentionCode = ((_a = opts === null || opts === void 0 ? void 0 : opts.user) === null || _a === void 0 ? void 0 : _a[mentionName]) || "";
-        return (mentionCode === "") ? mentionName : `<@${mentionCode}>`;
-    }
-    if (mentionType.toLowerCase() === 'group') {
-        mentionCode = ((_b = opts === null || opts === void 0 ? void 0 : opts.group) === null || _b === void 0 ? void 0 : _b[mentionName]) || "";
-        return (mentionCode === "") ? mentionName : `<!subteam^${mentionCode}>`;
-    }
-    return mentionName;
-}
-function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
-    var _a, _b;
+function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackInfo) {
+    var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         const eventName = process.env.GITHUB_EVENT_NAME;
         const workflow = process.env.GITHUB_WORKFLOW;
@@ -316,10 +323,9 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
             }
         }
         handlebars_1.default.registerHelper('icon', status => stepIcon(status, opts === null || opts === void 0 ? void 0 : opts.icons));
-        handlebars_1.default.registerHelper('mention', (mentionType, mentionName) => stepMention(mentionType, mentionName, opts === null || opts === void 0 ? void 0 : opts.mention));
         const pretextTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.pretext) || '');
         const titleTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.title) || '');
-        const defaultText = `${'*<{{{workflowUrl}}}|Workflow _{{workflow}}_ ' +
+        const defaultText = `${'*<{{{workflowRunUrl}}}|Workflow _{{workflow}}_ ' +
             'job _{{jobName}}_ triggered by _{{eventName}}_ is _{{jobStatus}}_>* ' +
             'for <{{refUrl}}|`{{ref}}`>\n'}${description ? '<{{diffUrl}}|`{{diffRef}}`> - {{{description}}}' : ''}`;
         const textTemplate = handlebars_1.default.compile(message || (opts === null || opts === void 0 ? void 0 : opts.text) || defaultText);
@@ -347,8 +353,27 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
             }
         }
         const fieldsTemplate = handlebars_1.default.compile(JSON.stringify(filteredFields));
-        const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}> #{{runNumber}}';
+        const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}>';
         const footerTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.footer) || defaultFooter);
+        let mentionUser = {};
+        for (const [k, v] of Object.entries((slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.user) || {})) {
+            mentionUser = Object.assign(Object.assign({}, mentionUser), { [k]: `@${v}` });
+        }
+        let mentionGroup = {};
+        for (const [k, v] of Object.entries((slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.group) || {})) {
+            mentionGroup = Object.assign(Object.assign({}, mentionGroup), { [k]: `!subteam^${v}` });
+        }
+        let mentionGithub = {};
+        for (const [k, v] of Object.entries((slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.github) || {})) {
+            mentionGithub = Object.assign(Object.assign({}, mentionGithub), { [k]: `@${v}` });
+        }
+        const actorSlack = actor || "";
+        const actorSlackId = (_c = slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.github) === null || _c === void 0 ? void 0 : _c[actorSlack];
+        let mentionActor = `@${actorSlack}`;
+        if (actorSlackId) {
+            mentionActor = `@${actorSlackId}`;
+        }
+        const mention = { user: mentionUser, group: mentionGroup, github: mentionGithub, actor: mentionActor };
         const data = {
             env: process.env,
             payload: payload || {},
@@ -375,7 +400,8 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
             diffUrl,
             description,
             sender,
-            ts
+            ts,
+            mention
         };
         const pretext = pretextTemplate(data);
         const title = titleTemplate(data);

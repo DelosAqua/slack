@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as yaml from 'js-yaml'
-import {ConfigOptions, send} from './slack'
+import {ConfigOptions, SlackInfoOptions, send} from './slack'
 import {existsSync, readFileSync} from 'fs'
 
 async function run(): Promise<void> {
@@ -25,17 +25,35 @@ async function run(): Promise<void> {
     }
     core.debug(yaml.dump(config))
 
+    const slackInfoFile = core.getInput('slack_info', {required: false})
+    let slackInfo: SlackInfoOptions = {}
+    try {
+      core.info(`Reading slack config file ${slackInfoFile}...`)
+      if (existsSync(slackInfoFile)) {
+        slackInfo = yaml.load(readFileSync(slackInfoFile, 'utf-8'), {schema: yaml.FAILSAFE_SCHEMA}) as SlackInfoOptions
+      }
+    } catch (error) {
+      if (error instanceof Error) core.info(error.message)
+    }
+    core.debug(yaml.dump(slackInfo))
+
     const url = process.env.SLACK_WEBHOOK_URL as string
     const jobName = process.env.GITHUB_JOB as string
     const jobStatus = core.getInput('status', {required: true}).toUpperCase()
     const jobSteps = JSON.parse(core.getInput('steps', {required: false}) || '{}')
+    const allowedSteps = config?.filter?.steps || []
+    const filteredSteps = Object.keys(allowedSteps).length ?
+      Object.keys(jobSteps).filter(k => allowedSteps.includes(k)).reduce((obj, k) => {
+        obj = {...obj, ...{[k]: jobSteps[k]}}
+        return obj
+      }, {}) : jobSteps
     const channel = core.getInput('channel', {required: false})
     const message = core.getInput('message', {required: false})
     core.debug(`jobName: ${jobName}, jobStatus: ${jobStatus}`)
     core.debug(`channel: ${channel}, message: ${message}`)
 
     if (url) {
-      await send(url, jobName, jobStatus, jobSteps, channel, message, config)
+      await send(url, jobName, jobStatus, filteredSteps, channel, message, config, slackInfo)
       core.debug('Sent to Slack.')
     } else {
       core.info('No "SLACK_WEBHOOK_URL" secret configured. Skip.')
