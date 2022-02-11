@@ -4,7 +4,6 @@ import {Block, KnownBlock, MessageAttachment} from '@slack/types'
 import {IncomingWebhook, IncomingWebhookResult} from '@slack/webhook'
 import {EventPayloads} from '@octokit/webhooks'
 import Handlebars from './handlebars'
-import { stringify } from 'querystring'
 
 const DEFAULT_USERNAME = 'GitHub Actions'
 const DEFAULT_ICON_URL = 'https://octodex.github.com/images/original.png'
@@ -318,7 +317,7 @@ export async function send(
   const mention = {user: mentionUser, group: mentionGroup, github: mentionGithub, actor: mentionActor}
 
   const data = {
-    env: JSON.parse(stringify(process.env)),
+    env: process.env,
     payload: payload || {},
     jobName,
     jobStatus,
@@ -346,8 +345,6 @@ export async function send(
     ts,
     mention
   }
-  core.info(`1: ${data.env.TEST_WEB_URL}`)
-  core.info(`2: ${process.env.TEST_WEB_URL}`)
 
   const pretext = pretextTemplate(data)
   const title = titleTemplate(data)
