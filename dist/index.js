@@ -113,6 +113,19 @@ function run() {
                     core.info(error.message);
             }
             core.debug(yaml.dump(config));
+            const slackInfoFile = core.getInput('slack_info', { required: false });
+            let slackInfo = {};
+            try {
+                core.info(`Reading slack config file ${slackInfo}...`);
+                if ((0, fs_1.existsSync)(slackInfoFile)) {
+                    slackInfo = yaml.load((0, fs_1.readFileSync)(slackInfoFile, 'utf-8'), { schema: yaml.FAILSAFE_SCHEMA });
+                }
+            }
+            catch (error) {
+                if (error instanceof Error)
+                    core.info(error.message);
+            }
+            core.debug(yaml.dump(slackInfo));
             const url = process.env.SLACK_WEBHOOK_URL;
             const jobName = process.env.GITHUB_JOB;
             const jobStatus = core.getInput('status', { required: true }).toUpperCase();
@@ -122,7 +135,7 @@ function run() {
             core.debug(`jobName: ${jobName}, jobStatus: ${jobStatus}`);
             core.debug(`channel: ${channel}, message: ${message}`);
             if (url) {
-                yield (0, slack_1.send)(url, jobName, jobStatus, jobSteps, channel, message, config);
+                yield (0, slack_1.send)(url, jobName, jobStatus, jobSteps, channel, message, config, slackInfo);
                 core.debug('Sent to Slack.');
             }
             else {
@@ -216,8 +229,25 @@ function stepIcon(status, opts) {
         return (opts === null || opts === void 0 ? void 0 : opts.skipped) || ':no_entry_sign:';
     return `:grey_question: ${status}`;
 }
-function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
-    var _a, _b, _c, _d;
+function stepMention(mentionType, mentionName, slackInfo) {
+    var _a, _b, _c;
+    let mentionCode = "";
+    if (mentionType.toLowerCase() === "user") {
+        mentionCode = ((_a = slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.user) === null || _a === void 0 ? void 0 : _a[mentionName]) || "";
+        return (mentionCode === "") ? `@${mentionName}` : `@${mentionCode}`;
+    }
+    if (mentionType.toLowerCase() === "group") {
+        mentionCode = ((_b = slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.group) === null || _b === void 0 ? void 0 : _b[mentionName]) || "";
+        return (mentionCode === "") ? `@${mentionName}` : `!subteam^${mentionCode}`;
+    }
+    if (mentionType.toLowerCase() === "github") {
+        mentionCode = ((_c = slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.github) === null || _c === void 0 ? void 0 : _c[mentionName]) || "";
+        return (mentionCode === "") ? `@${mentionName}` : `@${mentionCode}`;
+    }
+    return `@${mentionName}`;
+}
+function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackInfo) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const eventName = process.env.GITHUB_EVENT_NAME;
         const workflow = process.env.GITHUB_WORKFLOW;
@@ -303,9 +333,12 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
             }
         }
         handlebars_1.default.registerHelper('icon', status => stepIcon(status, opts === null || opts === void 0 ? void 0 : opts.icons));
+        handlebars_1.default.registerHelper('mentionuser', mentionName => stepMention("user", mentionName, slackInfo));
+        handlebars_1.default.registerHelper('mentiongroup', mentionName => stepMention("group", mentionName, slackInfo));
+        handlebars_1.default.registerHelper('mentiongithub', mentionName => stepMention("github", mentionName, slackInfo));
         const pretextTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.pretext) || '');
         const titleTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.title) || '');
-        const defaultText = `${'*<{{{workflowUrl}}}|Workflow _{{workflow}}_ ' +
+        const defaultText = `${'*<{{{workflowRunUrl}}}|Workflow _{{workflow}}_ ' +
             'job _{{jobName}}_ triggered by _{{eventName}}_ is _{{jobStatus}}_>* ' +
             'for <{{refUrl}}|`{{ref}}`>\n'}${description ? '<{{diffUrl}}|`{{diffRef}}`> - {{{description}}}' : ''}`;
         const textTemplate = handlebars_1.default.compile(message || (opts === null || opts === void 0 ? void 0 : opts.text) || defaultText);
@@ -335,15 +368,6 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
         const fieldsTemplate = handlebars_1.default.compile(JSON.stringify(filteredFields));
         const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}> #{{runNumber}}';
         const footerTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.footer) || defaultFooter);
-        let mentionGroup = {};
-        for (const [k, v] of Object.entries(((_c = opts === null || opts === void 0 ? void 0 : opts.mention) === null || _c === void 0 ? void 0 : _c.group) || {})) {
-            mentionGroup = Object.assign(Object.assign({}, mentionGroup), { [k]: `!subteam^${v}` });
-        }
-        let mentionUser = {};
-        for (const [k, v] of Object.entries(((_d = opts === null || opts === void 0 ? void 0 : opts.mention) === null || _d === void 0 ? void 0 : _d.user) || {})) {
-            mentionUser = Object.assign(Object.assign({}, mentionUser), { [k]: `@${v}` });
-        }
-        const mention = { group: mentionGroup, user: mentionUser };
         const data = {
             env: process.env,
             payload: payload || {},
@@ -370,8 +394,7 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts) {
             diffUrl,
             description,
             sender,
-            ts,
-            mention
+            ts
         };
         const pretext = pretextTemplate(data);
         const title = titleTemplate(data);

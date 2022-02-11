@@ -6,6 +6,10 @@ inputs:
     description: Configuration file
     required: false
     default: .github/slack.yml
+  slack_info:
+    description: Additional Slack information file
+    required: false
+    default: .github/slack-info.yml
   status:
     description: Specify success, failure, cancelled or a custom status.
     required: true

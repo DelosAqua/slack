@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as yaml from 'js-yaml'
-import {ConfigOptions, send} from './slack'
+import {ConfigOptions, SlackInfoOptions, send} from './slack'
 import {existsSync, readFileSync} from 'fs'
 
 async function run(): Promise<void> {
@@ -25,6 +25,18 @@ async function run(): Promise<void> {
     }
     core.debug(yaml.dump(config))
 
+    const slackInfoFile = core.getInput('slack_info', {required: false})
+    let slackInfo: SlackInfoOptions = {}
+    try {
+      core.info(`Reading slack config file ${slackInfo}...`)
+      if (existsSync(slackInfoFile)) {
+        slackInfo = yaml.load(readFileSync(slackInfoFile, 'utf-8'), {schema: yaml.FAILSAFE_SCHEMA}) as SlackInfoOptions
+      }
+    } catch (error) {
+      if (error instanceof Error) core.info(error.message)
+    }
+    core.debug(yaml.dump(slackInfo))
+
     const url = process.env.SLACK_WEBHOOK_URL as string
     const jobName = process.env.GITHUB_JOB as string
     const jobStatus = core.getInput('status', {required: true}).toUpperCase()
@@ -35,7 +47,7 @@ async function run(): Promise<void> {
     core.debug(`channel: ${channel}, message: ${message}`)
 
     if (url) {
-      await send(url, jobName, jobStatus, jobSteps, channel, message, config)
+      await send(url, jobName, jobStatus, jobSteps, channel, message, config, slackInfo)
       core.debug('Sent to Slack.')
     } else {
       core.info('No "SLACK_WEBHOOK_URL" secret configured. Skip.')
