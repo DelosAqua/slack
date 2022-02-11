@@ -28,7 +28,7 @@ async function run(): Promise<void> {
     const slackInfoFile = core.getInput('slack_info', {required: false})
     let slackInfo: SlackInfoOptions = {}
     try {
-      core.info(`Reading slack config file ${slackInfo}...`)
+      core.info(`Reading slack config file ${slackInfoFile}...`)
       if (existsSync(slackInfoFile)) {
         slackInfo = yaml.load(readFileSync(slackInfoFile, 'utf-8'), {schema: yaml.FAILSAFE_SCHEMA}) as SlackInfoOptions
       }
@@ -41,13 +41,19 @@ async function run(): Promise<void> {
     const jobName = process.env.GITHUB_JOB as string
     const jobStatus = core.getInput('status', {required: true}).toUpperCase()
     const jobSteps = JSON.parse(core.getInput('steps', {required: false}) || '{}')
+    const allowedSteps = config?.filter?.steps || []
+    const filteredSteps = Object.keys(allowedSteps).length ?
+      Object.keys(jobSteps).filter(k => allowedSteps.includes(k)).reduce((obj, k) => {
+        obj = {...obj, ...{[k]: jobSteps[k]}}
+        return obj
+      }, {}) : jobSteps
     const channel = core.getInput('channel', {required: false})
     const message = core.getInput('message', {required: false})
     core.debug(`jobName: ${jobName}, jobStatus: ${jobStatus}`)
     core.debug(`channel: ${channel}, message: ${message}`)
 
     if (url) {
-      await send(url, jobName, jobStatus, jobSteps, channel, message, config, slackInfo)
+      await send(url, jobName, jobStatus, filteredSteps, channel, message, config, slackInfo)
       core.debug('Sent to Slack.')
     } else {
       core.info('No "SLACK_WEBHOOK_URL" secret configured. Skip.')

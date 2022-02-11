@@ -91,6 +91,7 @@ const yaml = __importStar(__nccwpck_require__(1917));
 const slack_1 = __nccwpck_require__(568);
 const fs_1 = __nccwpck_require__(5747);
 function run() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // debug output of environment variables and event payload
@@ -116,7 +117,7 @@ function run() {
             const slackInfoFile = core.getInput('slack_info', { required: false });
             let slackInfo = {};
             try {
-                core.info(`Reading slack config file ${slackInfo}...`);
+                core.info(`Reading slack config file ${slackInfoFile}...`);
                 if ((0, fs_1.existsSync)(slackInfoFile)) {
                     slackInfo = yaml.load((0, fs_1.readFileSync)(slackInfoFile, 'utf-8'), { schema: yaml.FAILSAFE_SCHEMA });
                 }
@@ -130,12 +131,18 @@ function run() {
             const jobName = process.env.GITHUB_JOB;
             const jobStatus = core.getInput('status', { required: true }).toUpperCase();
             const jobSteps = JSON.parse(core.getInput('steps', { required: false }) || '{}');
+            const allowedSteps = ((_a = config === null || config === void 0 ? void 0 : config.filter) === null || _a === void 0 ? void 0 : _a.steps) || [];
+            const filteredSteps = Object.keys(allowedSteps).length ?
+                Object.keys(jobSteps).filter(k => allowedSteps.includes(k)).reduce((obj, k) => {
+                    obj = Object.assign(Object.assign({}, obj), { [k]: jobSteps[k] });
+                    return obj;
+                }, {}) : jobSteps;
             const channel = core.getInput('channel', { required: false });
             const message = core.getInput('message', { required: false });
             core.debug(`jobName: ${jobName}, jobStatus: ${jobStatus}`);
             core.debug(`channel: ${channel}, message: ${message}`);
             if (url) {
-                yield (0, slack_1.send)(url, jobName, jobStatus, jobSteps, channel, message, config, slackInfo);
+                yield (0, slack_1.send)(url, jobName, jobStatus, filteredSteps, channel, message, config, slackInfo);
                 core.debug('Sent to Slack.');
             }
             else {

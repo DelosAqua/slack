@@ -128,6 +128,10 @@ interface Section {
   if?: string
 }
 
+interface FilterOptions {
+  steps?: string[]
+}
+
 export interface ConfigOptions {
   username?: string
   icon_url?: string
@@ -143,6 +147,7 @@ export interface ConfigOptions {
   icons?: object
   unfurl_links?: boolean
   unfurl_media?: boolean
+  filter?: FilterOptions
 }
 
 export async function send(
