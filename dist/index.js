@@ -213,6 +213,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const webhook_1 = __nccwpck_require__(1095);
 const handlebars_1 = __importDefault(__nccwpck_require__(5595));
+const querystring_1 = __nccwpck_require__(1191);
 const DEFAULT_USERNAME = 'GitHub Actions';
 const DEFAULT_ICON_URL = 'https://octodex.github.com/images/original.png';
 const DEFAULT_FOOTER_ICON = 'https://github.githubassets.com/favicon.ico';
@@ -375,7 +376,7 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackIn
         }
         const mention = { user: mentionUser, group: mentionGroup, github: mentionGithub, actor: mentionActor };
         const data = {
-            env: process.env,
+            env: JSON.parse((0, querystring_1.stringify)(process.env)),
             payload: payload || {},
             jobName,
             jobStatus,
@@ -403,6 +404,8 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackIn
             ts,
             mention
         };
+        core.info(`1: ${data.env.TEST_WEB_URL}`);
+        core.info(`2: ${process.env.TEST_WEB_URL}`);
         const pretext = pretextTemplate(data);
         const title = titleTemplate(data);
         const text = textTemplate(data);
@@ -23415,6 +23418,14 @@ module.exports = require("os");
 
 "use strict";
 module.exports = require("path");
+
+/***/ }),
+
+/***/ 1191:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("querystring");
 
 /***/ }),
 
