@@ -229,25 +229,8 @@ function stepIcon(status, opts) {
         return (opts === null || opts === void 0 ? void 0 : opts.skipped) || ':no_entry_sign:';
     return `:grey_question: ${status}`;
 }
-function stepMention(mentionType, mentionName, slackInfo) {
-    var _a, _b, _c;
-    let mentionCode = "";
-    if (mentionType.toLowerCase() === "user") {
-        mentionCode = ((_a = slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.user) === null || _a === void 0 ? void 0 : _a[mentionName]) || "";
-        return (mentionCode === "") ? `@${mentionName}` : `@${mentionCode}`;
-    }
-    if (mentionType.toLowerCase() === "group") {
-        mentionCode = ((_b = slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.group) === null || _b === void 0 ? void 0 : _b[mentionName]) || "";
-        return (mentionCode === "") ? `@${mentionName}` : `!subteam^${mentionCode}`;
-    }
-    if (mentionType.toLowerCase() === "github") {
-        mentionCode = ((_c = slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.github) === null || _c === void 0 ? void 0 : _c[mentionName]) || "";
-        return (mentionCode === "") ? `@${mentionName}` : `@${mentionCode}`;
-    }
-    return `@${mentionName}`;
-}
 function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackInfo) {
-    var _a, _b;
+    var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         const eventName = process.env.GITHUB_EVENT_NAME;
         const workflow = process.env.GITHUB_WORKFLOW;
@@ -333,9 +316,6 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackIn
             }
         }
         handlebars_1.default.registerHelper('icon', status => stepIcon(status, opts === null || opts === void 0 ? void 0 : opts.icons));
-        handlebars_1.default.registerHelper('mentionuser', mentionName => stepMention("user", mentionName, slackInfo));
-        handlebars_1.default.registerHelper('mentiongroup', mentionName => stepMention("group", mentionName, slackInfo));
-        handlebars_1.default.registerHelper('mentiongithub', mentionName => stepMention("github", mentionName, slackInfo));
         const pretextTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.pretext) || '');
         const titleTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.title) || '');
         const defaultText = `${'*<{{{workflowRunUrl}}}|Workflow _{{workflow}}_ ' +
@@ -368,6 +348,25 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackIn
         const fieldsTemplate = handlebars_1.default.compile(JSON.stringify(filteredFields));
         const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}>';
         const footerTemplate = handlebars_1.default.compile((opts === null || opts === void 0 ? void 0 : opts.footer) || defaultFooter);
+        let mentionUser = {};
+        for (const [k, v] of Object.entries((slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.user) || {})) {
+            mentionUser = Object.assign(Object.assign({}, mentionUser), { [k]: `@${v}` });
+        }
+        let mentionGroup = {};
+        for (const [k, v] of Object.entries((slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.group) || {})) {
+            mentionGroup = Object.assign(Object.assign({}, mentionGroup), { [k]: `!subteam^${v}` });
+        }
+        let mentionGithub = {};
+        for (const [k, v] of Object.entries((slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.github) || {})) {
+            mentionGithub = Object.assign(Object.assign({}, mentionGithub), { [k]: `@${v}` });
+        }
+        const actorSlack = actor || "";
+        const actorSlackId = (_c = slackInfo === null || slackInfo === void 0 ? void 0 : slackInfo.github) === null || _c === void 0 ? void 0 : _c[actorSlack];
+        let mentionActor = `@${actorSlack}`;
+        if (actorSlackId) {
+            mentionActor = `@${actorSlackId}`;
+        }
+        const mention = { user: mentionUser, group: mentionGroup, github: mentionGithub, actor: mentionActor };
         const data = {
             env: process.env,
             payload: payload || {},
@@ -394,7 +393,8 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackIn
             diffUrl,
             description,
             sender,
-            ts
+            ts,
+            mention
         };
         const pretext = pretextTemplate(data);
         const title = titleTemplate(data);

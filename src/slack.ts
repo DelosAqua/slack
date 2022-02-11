@@ -57,23 +57,6 @@ interface SlackGithub {
   [key: string]: string
 }
 
-function stepMention(mentionType: string, mentionName: string, slackInfo?: SlackInfoOptions): string {
-  let mentionCode = ""
-  if (mentionType.toLowerCase() === "user") {
-    mentionCode = slackInfo?.user?.[mentionName] || ""
-    return (mentionCode === "")? `@${mentionName}` : `@${mentionCode}`
-  }
-  if (mentionType.toLowerCase() === "group") {
-    mentionCode = slackInfo?.group?.[mentionName] || ""
-    return (mentionCode === "")? `@${mentionName}` : `!subteam^${mentionCode}`
-  }
-  if (mentionType.toLowerCase() === "github") {
-    mentionCode = slackInfo?.github?.[mentionName] || ""
-    return (mentionCode === "")? `@${mentionName}` : `@${mentionCode}`
-  }
-  return `@${mentionName}`
-}
-
 interface Field {
   title: string
   value: string
@@ -261,9 +244,6 @@ export async function send(
   }
 
   Handlebars.registerHelper('icon', status => stepIcon(status, opts?.icons))
-  Handlebars.registerHelper('mentionuser', mentionName => stepMention("user", mentionName, slackInfo))
-  Handlebars.registerHelper('mentiongroup', mentionName => stepMention("group", mentionName, slackInfo))
-  Handlebars.registerHelper('mentiongithub', mentionName => stepMention("github", mentionName, slackInfo))
   
   const pretextTemplate = Handlebars.compile(opts?.pretext || '')
   const titleTemplate = Handlebars.compile(opts?.title || '')
@@ -307,6 +287,30 @@ export async function send(
   const defaultFooter = '<{{repositoryUrl}}|{{repositoryName}}>'
   const footerTemplate = Handlebars.compile(opts?.footer || defaultFooter)
 
+  let mentionUser = {}
+  for (const [k, v] of Object.entries(slackInfo?.user || {})) {
+    mentionUser = {...mentionUser, ...{[k]: `@${v}`}}
+  }
+
+  let mentionGroup = {}
+  for (const [k, v] of Object.entries(slackInfo?.group || {})) {
+    mentionGroup = {...mentionGroup, ...{[k]: `!subteam^${v}`}}
+  }
+
+  let mentionGithub = {}
+  for (const [k, v] of Object.entries(slackInfo?.github || {})) {
+    mentionGithub = {...mentionGithub, ...{[k]: `@${v}`}}
+  }
+
+  const actorSlack = actor || ""
+  const actorSlackId = slackInfo?.github?.[actorSlack]
+  let mentionActor = `@${actorSlack}`
+  if (actorSlackId) {
+    mentionActor = `@${actorSlackId}`
+  }
+
+  const mention = {user: mentionUser, group: mentionGroup, github: mentionGithub, actor: mentionActor}
+
   const data = {
     env: process.env,
     payload: payload || {},
@@ -333,7 +337,8 @@ export async function send(
     diffUrl,
     description,
     sender,
-    ts
+    ts,
+    mention
   }
 
   const pretext = pretextTemplate(data)
