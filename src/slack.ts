@@ -148,6 +148,7 @@ export interface ConfigOptions {
   unfurl_links?: boolean
   unfurl_media?: boolean
   filter?: FilterOptions
+  show_author?: boolean
 }
 
 export async function send(
@@ -385,9 +386,6 @@ export async function send(
       mrkdwn_in: ['pretext' as const, 'text' as const, 'fields' as const],
       color: jobColor(jobStatus, opts?.colors),
       pretext,
-      author_name: sender?.login,
-      author_link: sender?.html_url,
-      author_icon: sender?.avatar_url,
       title,
       title_link: opts?.title_link,
       text,
@@ -398,6 +396,17 @@ export async function send(
       ts: ts.toString()
     }
   ]
+
+  if (opts?.show_author && attachments?.length) {
+    attachments[0] = {
+      ...attachments[0],
+      ...{
+        author_name: sender?.login,
+        author_link: sender?.html_url,
+        author_icon: sender?.avatar_url,
+      }
+    }
+  }
 
   if (opts?.blocks) {
     attachments.push({

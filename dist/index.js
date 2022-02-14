@@ -141,6 +141,7 @@ function run() {
             const message = core.getInput('message', { required: false });
             core.debug(`jobName: ${jobName}, jobStatus: ${jobStatus}`);
             core.debug(`channel: ${channel}, message: ${message}`);
+            config.show_author = core.getInput('show_author', { required: false }) === "true" ? true : false;
             if (url) {
                 yield (0, slack_1.send)(url, jobName, jobStatus, filteredSteps, channel, message, config, slackInfo);
                 core.debug('Sent to Slack.');
@@ -439,9 +440,6 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackIn
                 mrkdwn_in: ['pretext', 'text', 'fields'],
                 color: jobColor(jobStatus, opts === null || opts === void 0 ? void 0 : opts.colors),
                 pretext,
-                author_name: sender === null || sender === void 0 ? void 0 : sender.login,
-                author_link: sender === null || sender === void 0 ? void 0 : sender.html_url,
-                author_icon: sender === null || sender === void 0 ? void 0 : sender.avatar_url,
                 title,
                 title_link: opts === null || opts === void 0 ? void 0 : opts.title_link,
                 text,
@@ -452,6 +450,13 @@ function send(url, jobName, jobStatus, jobSteps, channel, message, opts, slackIn
                 ts: ts.toString()
             }
         ];
+        if ((opts === null || opts === void 0 ? void 0 : opts.show_author) && (attachments === null || attachments === void 0 ? void 0 : attachments.length)) {
+            attachments[0] = Object.assign(Object.assign({}, attachments[0]), {
+                author_name: sender === null || sender === void 0 ? void 0 : sender.login,
+                author_link: sender === null || sender === void 0 ? void 0 : sender.html_url,
+                author_icon: sender === null || sender === void 0 ? void 0 : sender.avatar_url,
+            });
+        }
         if (opts === null || opts === void 0 ? void 0 : opts.blocks) {
             attachments.push({
                 color: jobColor(jobStatus, opts === null || opts === void 0 ? void 0 : opts.colors),
