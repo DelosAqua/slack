@@ -51,6 +51,7 @@ async function run(): Promise<void> {
     const message = core.getInput('message', {required: false})
     core.debug(`jobName: ${jobName}, jobStatus: ${jobStatus}`)
     core.debug(`channel: ${channel}, message: ${message}`)
+    config.show_author = core.getInput('show_author', {required: false}) === "true" ? true : false
 
     if (url) {
       await send(url, jobName, jobStatus, filteredSteps, channel, message, config, slackInfo)

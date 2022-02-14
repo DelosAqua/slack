@@ -22,6 +22,9 @@ inputs:
   message:
     description: Override message format for step
     required: false
+  show_author:
+    description: Show actor as author on message header information
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
