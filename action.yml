@@ -26,7 +26,7 @@ inputs:
     description: Show actor as author on message header information
     required: false
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
 branding:
   icon: alert-circle
